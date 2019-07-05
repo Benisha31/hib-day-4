@@ -1,0 +1,1288 @@
+LoginBean.java
+**************
+
+package com.dsrc.bean;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name="login")
+public class LoginBean {
+	@Id
+	@Column(name="loginid")
+	private int loginid;
+	@Column(name="password")
+	private String password;
+	@Column(name="role")
+	private String role;
+	
+	public int getLoginid() {
+		return loginid;
+	}
+	public void setLoginid(int loginid) {
+		this.loginid = loginid;
+	}
+	public String getPassword() {
+		return password;
+	}
+	public void setPassword(String password) {
+		this.password = password;
+	}
+	public String getRole() {
+		return role;
+	}
+	public void setRole(String role) {
+		this.role = role;
+	}
+}
+
+login.jsp
+*********
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Insert title here</title>
+</head>
+<body>
+<form action="">
+<center>
+<img alt="img" src="Logo.png"><hr>
+<table>
+<tr><td>Login Name</td><td><input type="text" name="logname"></td></tr>
+<tr><td>Password</td><td><input type="password" name="pass"></td></tr>
+<tr><td>Role</td><td><input type="radio" name="admin">Admin<input type="radio" name="admin">Employee</td></tr>
+<tr><td></td><td align="right"><input type="button" value="Login"></td></tr>
+</table>
+</center>
+</form>
+</body>
+</html>
+
+
+LoginServlet.java
+******************
+
+package com.dsrc.controller;
+
+import java.io.IOException;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.dsrc.bean.LoginBean;
+import com.dsrc.bo.LoginBO;
+
+
+@WebServlet("/LoginServlet")
+public class LoginServlet extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+  
+    public LoginServlet() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		response.getWriter().append("Served at: ").append(request.getContextPath());
+	}
+
+
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+
+		// Fill the CODE
+		// Verify the result of LoginBO and Redirect to pages..
+		doGet(request, response);
+
+		int logid=Integer.parseInt(request.getParameter("logname"));
+		String pass=request.getParameter("pass");
+		String role=request.getParameter("admin");
+		
+		LoginBean lb=new LoginBean();
+		lb.setLoginid(logid);
+		lb.setPassword(pass);
+		lb.setRole(role);
+		
+		LoginBO lbo=new LoginBO();
+		boolean res=lbo.validateUser(lb);
+		if(res)
+		{
+			if(role.equalsIgnoreCase("Admin"))
+			{
+				RequestDispatcher rd=request.getRequestDispatcher("adminHome.jsp");
+				rd.forward(request, response);
+			}
+			else if(role.equalsIgnoreCase("Employee"))
+			{
+				RequestDispatcher rd=request.getRequestDispatcher("employeeHome.jsp");
+				rd.forward(request, response);
+			}
+		}
+		else
+		{
+			RequestDispatcher rd=request.getRequestDispatcher("login.jsp");
+			request.setAttribute("error", "Invalid Id");
+			rd.forward(request, response);			
+		}
+	}
+}
+
+
+LoginBO.java
+*************
+
+package com.dsrc.bo;
+
+import com.dsrc.bean.LoginBean;
+import com.dsrc.dao.LoginDAO;
+
+public class LoginBO 
+{
+		public boolean validateUser(LoginBean bean)
+		{
+			// CAll DAO
+			
+			LoginDAO ldao=new LoginDAO();
+			boolean res=ldao.validateUser(bean);
+						
+			return res;
+		}
+}
+
+
+LoginDAO.java
+*************
+
+package com.dsrc.dao;
+
+import java.util.Iterator;
+import java.util.List;
+
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.AnnotationConfiguration;
+
+import com.dsrc.bean.LoginBean;
+
+public class LoginDAO {
+	public boolean validateUser(LoginBean bean)
+	{
+		//Use Hibernate , verify the user..
+		boolean res=false;
+		int id=bean.getLoginid();
+		String pass=bean.getPassword();
+		String role=bean.getRole();
+		
+		SessionFactory sf=new AnnotationConfiguration().configure().addAnnotatedClass(LoginBean.class).buildSessionFactory();
+		Session s=sf.openSession();
+		Transaction tx=s.beginTransaction();
+		List check=s.createQuery("from LoginBean").list();
+		
+		for(Iterator i=check.iterator();i.hasNext();)
+		{
+			LoginBean lb=(LoginBean) i.next();
+			if(id==lb.getLoginid()&&pass.equalsIgnoreCase(lb.getPassword())&&role.equalsIgnoreCase(lb.getRole()))
+			{
+				res=true;
+			}
+		}	
+		return res;
+	}
+}
+
+adminHome.jsp
+**********
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Insert title here</title>
+</head>
+<body>
+<center>
+<img alt="img" src="Logo.png"><hr>
+<h1>Welcome Admin!</h1>
+</center>
+</body>
+</html>
+
+employeeHome.jsp
+*****************
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Insert title here</title>
+</head>
+<body>
+<center>
+<img alt="img" src="Logo.png"><hr>
+<h1>Welcome Employee!</h1>
+</center>
+</body>
+</html>
+
+
+hibernate.cfg.xml
+******************
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC  
+          "-//Hibernate/Hibernate Configuration DTD 3.0//EN"  
+          "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">  
+  
+<hibernate-configuration>  
+  
+    <session-factory>  
+        <property name="hbm2ddl.auto">update</property>  
+        <property name="dialect">org.hibernate.dialect.MySQLDialect</property>  
+        <property name="connection.url">jdbc:mysql://localhost:3306/EmpDBS</property>  
+        <property name="connection.username">root</property>  
+        <property name="connection.password">dsrc</property>  
+        <property name="connection.driver_class">com.mysql.jdbc.Driver</property>  
+        <mapping class="com.dsrc.bean.LoginBean" />
+    </session-factory>  
+  
+</hibernate-configuration> 
+
+
+no  2
+
+Department.java
+***************
+
+package com.dsrc.bean;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name="Department")
+public class Department {
+	
+	@Id
+	@Column(name="DeptNo")
+	private int deptno;
+	@Column(name="DeptName")
+	private String deptname;
+	@Column(name="Location")
+	private String location;
+	
+	public int getDeptno() {
+		return deptno;
+	}
+	public void setDeptno(int deptno) {
+		this.deptno = deptno;
+	}
+	public String getDeptname() {
+		return deptname;
+	}
+	public void setDeptname(String deptname) {
+		this.deptname = deptname;
+	}
+	public String getLocation() {
+		return location;
+	}
+	public void setLocation(String location) {
+		this.location = location;
+	}
+}
+
+
+adminHome.jsp
+**************
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Insert title here</title>
+</head>
+<body>
+<form action="DepartmentRegister" method="get">
+<center>
+<img alt="img" src="Logo.png"><hr>
+<input type="submit" name="sub" value="Add Department">
+<input type="submit" name="sub" value="Delete Department">
+<input type="submit" name="sub" value="Add Employee">
+<input type="submit" name="sub" value="Delete Employee">
+<input type="submit" name="sub" value="Search Employee">
+</center>
+</form>
+</body>
+</html>
+
+
+DepartmentRegister.java
+************************
+
+package com.dsrc.controller;
+
+import java.io.IOException;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.dsrc.bean.Department;
+import com.dsrc.bo.DepartmentBO;
+import com.dsrc.exception.EMPException;
+
+/**
+ * Servlet implementation class DepartmentRegister
+ */
+@WebServlet("/DepartmentRegister")
+public class DepartmentRegister extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public DepartmentRegister() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		if(request.getParameter("sub").equalsIgnoreCase("Add Department"))
+		{
+			response.sendRedirect("addDepartment.jsp");
+		}
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		
+		int no=Integer.parseInt(request.getParameter("deptno"));
+		String name=request.getParameter("deptname");
+		String loc=request.getParameter("loc");
+		
+		Department dp=new Department();
+		dp.setDeptno(no);
+		dp.setDeptname(name);
+		dp.setLocation(loc);
+		
+		DepartmentBO dbo=new DepartmentBO();
+		try {
+			boolean res=dbo.validateDepartment(dp);
+			if(res)
+			{
+				RequestDispatcher rd=request.getRequestDispatcher("adminHome.jsp");
+				rd.forward(request, response);
+			}
+		} catch (EMPException e) {
+			String error=e.getMessage();
+			RequestDispatcher rd=request.getRequestDispatcher("addDepartment.jsp");
+			request.setAttribute("error", error);
+			rd.forward(request, response);
+		}
+	}
+}
+
+
+addDepartment.jsp
+******************
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Insert title here</title>
+</head>
+<body>
+<form action="DepartmentRegister" method="post">
+<center>
+<img alt="img" src="Logo.png"><hr>
+<% if(request.getAttribute("error")!=null){ %>
+<font><%=request.getAttribute("error") %></font><%}%>
+<table>
+<tr><td>Department NO</td><td><input type="text" name="deptno"></td></tr>
+<tr><td>Department Name</td><td><input type="text" name="deptname"></td></tr>
+<tr><td>Location</td><td>
+<select name="loc">
+<option value=""></option>
+<option value="Chennai">Chennai</option>
+<option value="Bangalore">Bangalore</option>
+<option value="Mumbai">Mumbai</option>
+</select>
+</td></tr>
+<tr><td></td><td align="right"><input type="submit" value="Save"></td></tr>
+</table>
+</center>
+</form>
+</body>
+</html>
+
+
+DepartmentBO.java
+******************
+
+package com.dsrc.bo;
+
+import com.dsrc.bean.Department;
+import com.dsrc.dao.DepartmentDAO;
+import com.dsrc.exception.EMPException;
+
+public class DepartmentBO {
+
+	public boolean validateDepartment( Department depart) throws EMPException
+	{
+		boolean res=false;
+		String no=String.valueOf(depart.getDeptno());
+		String name=depart.getDeptname();
+		String loc=depart.getLocation();
+		
+		if(no.length()>0&&name.length()>0&&loc.length()>0)
+		{
+			DepartmentDAO ddao=new DepartmentDAO();
+			res=ddao.saveDepartment(depart);
+		}
+		else
+		{
+			throw new EMPException("Fill All Details");
+		}
+		
+		return res;
+		
+	}
+}
+
+
+DepartmentDAO.java
+*******************
+
+package com.dsrc.dao;
+
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.AnnotationConfiguration;
+
+import com.dsrc.bean.Department;
+
+public class DepartmentDAO 
+{
+	public boolean saveDepartment( Department depart)
+	{
+		
+		SessionFactory sf=new AnnotationConfiguration().configure().addAnnotatedClass(Department.class).buildSessionFactory();
+		Session s=sf.openSession();
+		Transaction tx=s.beginTransaction();
+		s.save(depart);
+		tx.commit();
+		s.close();
+		return true;	
+	}
+}
+
+
+hibernate.cfg.xml
+******************
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC  
+          "-//Hibernate/Hibernate Configuration DTD 3.0//EN"  
+          "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">  
+  
+<hibernate-configuration>  
+  
+    <session-factory>  
+        <property name="hbm2ddl.auto">update</property>  
+        <property name="dialect">org.hibernate.dialect.MySQLDialect</property>  
+        <property name="connection.url">jdbc:mysql://localhost:3306/EmpDBS</property>  
+        <property name="connection.username">root</property>  
+        <property name="connection.password">dsrc</property>  
+        <property name="connection.driver_class">com.mysql.jdbc.Driver</property>  
+        <mapping class="com.dsrc.bean.Department" />
+    </session-factory>  
+  
+</hibernate-configuration> 
+
+
+no  3
+
+Department.java
+****************
+
+package com.dsrc.bean;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name="Department")
+public class Department {
+	
+	@Id
+	@Column(name="DeptNo")
+	private int deptno;
+	@Column(name="DeptName")
+	private String deptname;
+	@Column(name="Location")
+	private String location;
+	
+	public int getDeptno() {
+		return deptno;
+	}
+	public void setDeptno(int deptno) {
+		this.deptno = deptno;
+	}
+	public String getDeptname() {
+		return deptname;
+	}
+	public void setDeptname(String deptname) {
+		this.deptname = deptname;
+	}
+	public String getLocation() {
+		return location;
+	}
+	public void setLocation(String location) {
+		this.location = location;
+	}
+}
+
+adminHome.jsp
+**************
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Insert title here</title>
+</head>
+<body>
+<form action="DepartmentRegister" method="get">
+<center>
+<img alt="img" src="Logo.png"><hr>
+<input type="submit" name="sub" value="Add Department">
+<input type="submit" name="sub" value="Delete Department">
+<input type="submit" name="sub" value="Add Employee">
+<input type="submit" name="sub" value="Delete Employee">
+<input type="submit" name="sub" value="Search Employee">
+</center>
+</form>
+</body>
+</html>
+
+DepartmentRegister.java
+************************
+
+package com.dsrc.controller;
+
+import java.io.IOException;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+/**
+ * Servlet implementation class DepartmentRegister
+ */
+@WebServlet("/DepartmentRegister")
+public class DepartmentRegister extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public DepartmentRegister() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		if(request.getParameter("sub").equalsIgnoreCase("Delete Department"))
+		{
+			response.sendRedirect("deleteDepartment.jsp");
+		}
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		doGet(request, response);
+	}
+
+}
+
+
+deleteDepartment.jsp
+**********************
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Insert title here</title>
+</head>
+<body>
+<form action="DepartmentRemove" method="post">
+<center>
+<img alt="img" src="Logo.png"><hr>
+<table>
+<tr><td>Department No</td><td><input type="text" name="no"></td><tr>
+<tr><td></td><td align="right"><input type="Submit" value="REMOVE"></td></tr>
+<tr><td><font color="red"><%if(request.getAttribute("error")!=null){%><%=request.getAttribute("error")%><%}%></font></td></tr>
+</table>
+</center>
+</form>
+</body>
+</html>
+
+DepartmentRemove.java
+*********************
+
+package com.dsrc.controller;
+
+import java.io.IOException;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.dsrc.bean.Department;
+import com.dsrc.bo.DepartmentBO;
+import com.dsrc.exception.EMPException;
+
+/**
+ * Servlet implementation class DepartmentRemove
+ */
+@WebServlet("/DepartmentRemove")
+public class DepartmentRemove extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public DepartmentRemove() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		response.getWriter().append("Served at: ").append(request.getContextPath());
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		
+		try {
+			int no=Integer.parseInt(request.getParameter("no"));
+			
+			Department d=new Department();
+			d.setDeptno(no);
+			
+			DepartmentBO dbo=new DepartmentBO();
+			boolean res=dbo.validateDepartmentDelete(d);
+			if(res==false)
+			{
+				RequestDispatcher rd=request.getRequestDispatcher("deleteDepartment.jsp");
+				request.setAttribute("error","Invalid DeptNo");
+				rd.forward(request, response);
+			}
+			else
+			{
+				response.sendRedirect("adminHome.jsp");
+			}
+		} catch (EMPException e) {
+			// TODO Auto-generated catch block
+			RequestDispatcher rd=request.getRequestDispatcher("deleteDepartment.jsp");
+			request.setAttribute("error", e.getMessage());
+			rd.forward(request, response);
+		}catch(NumberFormatException n)
+		{
+			RequestDispatcher rd=request.getRequestDispatcher("deleteDepartment.jsp");
+			request.setAttribute("error", "Enter the DeptNo");
+			rd.forward(request, response);
+		}
+	}
+}
+
+DepartmentBO.java
+******************
+
+package com.dsrc.bo;
+
+import com.dsrc.bean.Department;
+import com.dsrc.dao.DepartmentDAO;
+import com.dsrc.exception.EMPException;
+
+public class DepartmentBO {
+
+	public boolean validateDepartment( Department depart)
+	{
+		return false;
+		
+	}
+	public boolean validateDepartmentDelete( Department depart) throws EMPException
+	{
+		
+		String no=String.valueOf(depart.getDeptno());
+		boolean res=false;
+		if(no.length()>0)
+		{
+			DepartmentDAO ddao=new DepartmentDAO();
+			res=ddao.deleteDepartment(depart); 
+		}
+		else
+		{
+			throw new EMPException("Enter the no");
+		}
+		
+		return res;
+		
+	}
+}
+
+
+DepartmentDAO.java
+*******************
+
+package com.dsrc.dao;
+
+import java.util.Iterator;
+import java.util.List;
+
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.AnnotationConfiguration;
+
+import com.dsrc.bean.Department;
+
+public class DepartmentDAO 
+{
+	public boolean saveDepartment( Department depart)
+	{
+		return false;
+		
+	}
+	public boolean deleteDepartment( Department depart)
+	{
+		SessionFactory sf=new AnnotationConfiguration().configure().addAnnotatedClass(Department.class).buildSessionFactory();
+		Session s=sf.openSession();
+		Transaction tx=s.beginTransaction();	
+		int j=depart.getDeptno();
+		List dept=s.createQuery("From Department").list();
+		for(Iterator i=dept.iterator();i.hasNext();)
+		{
+			Department d=(Department) i.next();
+			if(j==d.getDeptno())
+			{
+				depart=(Department) s.get(Department.class, depart.getDeptno());
+				s.delete(depart);
+				tx.commit();
+				s.close();
+				return true;
+			}
+		}
+		return false;				
+	}
+}
+
+
+no  4
+
+
+Employee.java
+**************
+
+package com.dsrc.bean;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name="Employee")
+public class Employee {
+	
+	@Id
+	@Column(name="EmpNo")
+	private int empno;
+	@Column(name="FirstName")
+	private String fname;
+	@Column(name="LastName")
+	private String lname;
+	@Column(name="Email")
+	private String email;
+	@Column(name="Mobile")
+	private String mobile;
+	@Column(name="DeptName")
+	private String deptname;
+	public int getEmpno() {
+		return empno;
+	}
+	public void setEmpno(int empno) {
+		this.empno = empno;
+	}
+	public String getFname() {
+		return fname;
+	}
+	public void setFname(String fname) {
+		this.fname = fname;
+	}
+	public String getLname() {
+		return lname;
+	}
+	public void setLname(String lname) {
+		this.lname = lname;
+	}
+	public String getEmail() {
+		return email;
+	}
+	public void setEmail(String email) {
+		this.email = email;
+	}
+	public String getMobile() {
+		return mobile;
+	}
+	public void setMobile(String mobile) {
+		this.mobile = mobile;
+	}
+	public String getDeptname() {
+		return deptname;
+	}
+	public void setDeptname(String deptname) {
+		this.deptname = deptname;
+	}
+}
+
+
+adminHome.jsp
+**************
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Insert title here</title>
+</head>
+<body>
+<form action="EmployeeRegister" method="get">
+<center>
+<img alt="img" src="Logo.png"><hr>
+<input type="submit" name="sub" value="Add Department">
+<input type="submit" name="sub" value="Delete Department">
+<input type="submit" name="sub" value="Add Employee">
+<input type="submit" name="sub" value="Delete Employee">
+<input type="submit" name="sub" value="Search Employee">
+</center>
+</form>
+</body>
+</html>
+
+
+EmployeeRegister.java
+**********************
+
+package com.dsrc.controller;
+
+import java.io.IOException;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.dsrc.bean.Employee;
+import com.dsrc.bo.EmployeeBO;
+import com.dsrc.exception.EMPException;
+
+/**
+ * Servlet implementation class EmployeeRegister
+ */
+@WebServlet("/EmployeeRegister")
+public class EmployeeRegister extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public EmployeeRegister() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		if(request.getParameter("sub").equalsIgnoreCase("Add Employee"))
+		{
+			response.sendRedirect("addEmployee.jsp");
+		}
+		
+	}
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+
+		try {
+			int no=Integer.parseInt(request.getParameter("empno"));
+			String fname=request.getParameter("fname");
+			String lname=request.getParameter("lname");
+			String email=request.getParameter("email");
+			String mobile=request.getParameter("mobile");
+			String deptname=request.getParameter("deptname");
+			
+			boolean res;
+			Employee e=new Employee();
+			e.setEmpno(no);
+			e.setFname(fname);
+			e.setLname(lname);
+			e.setEmail(email);
+			e.setMobile(mobile);
+			e.setDeptname(deptname);
+			
+			EmployeeBO ebo=new EmployeeBO();
+			res=ebo.validateEmployee(e);
+			if(res)
+			{
+				response.sendRedirect("adminHome.jsp");
+			}
+		} catch (EMPException e1) {
+			
+			RequestDispatcher rd=request.getRequestDispatcher("addEmployee.jsp");
+			request.setAttribute("error", e1.getMessage());
+			rd.forward(request, response);		
+		}	catch(NumberFormatException n)
+		{
+			RequestDispatcher rd=request.getRequestDispatcher("addEmployee.jsp");
+			request.setAttribute("error", "Fill all Details");
+			rd.forward(request, response);
+		}
+	}
+}
+
+
+addEmployee.jsp
+****************
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Insert title here</title>
+</head>
+<body>
+<form action="EmployeeRegister" method="post">
+<center>
+<img alt="img" src="Logo.png"><hr>
+<table>
+<tr><td>Employee No</td><td><input type="text" name="empno"></td></tr>
+<tr><td>First Name</td><td><input type="text" name="fname"></td></tr>
+<tr><td>Last Name</td><td><input type="text" name="lname"></td></tr>
+<tr><td>Email</td><td><input type="text" name="email"></td></tr>
+<tr><td>Mobile</td><td><input type="text" name="mobile"></td></tr>
+<tr><td>Department Name</td><td><input type="text" name="deptname"></td></tr>
+<tr><td></td><td align="right"><input type="submit" value="SAVE"></td></tr>
+</table>
+<font color="red"><%if(request.getAttribute("error")!=null){%><%=request.getAttribute("error")%><%}%></font>
+</center>
+</form>
+</body>
+</html>
+
+
+EmployeeBO.java
+****************
+
+package com.dsrc.bo;
+
+import org.hibernate.HibernateException;
+
+import com.dsrc.bean.Employee;
+import com.dsrc.dao.EmployeeDAO;
+import com.dsrc.exception.EMPException;
+
+public class EmployeeBO 
+{
+		public boolean validateEmployee(Employee employee) throws EMPException
+		{
+			
+			String no=String.valueOf(employee.getEmpno());
+			String fname=employee.getFname();
+			String lname=employee.getLname();
+			String email=employee.getEmail();
+			String mobile=employee.getMobile();
+			String deptname=employee.getDeptname();
+			
+			boolean res=false;
+			
+			if(no.length()>0&&fname.length()>0&&lname.length()>0&&email.length()>0&&mobile.length()>0&&deptname.length()>0)
+			{
+				String mail="^(.+)@(.+)$";
+				if(email.matches(mail))
+				{
+					if(mobile.length()==10)
+					{
+						EmployeeDAO edao=new EmployeeDAO();
+						try{
+						res=edao.saveEmployee(employee);
+						}
+						catch(HibernateException h)
+						{
+							throw new EMPException("Employee Id Already Exists");
+						}
+					}
+					else
+					{
+						throw new EMPException("Invalid MobileNo");
+					}
+				}
+				else
+				{
+					throw new EMPException("Invalid Email");
+				}
+			}
+			else
+			{
+				throw new EMPException("Fill all Details");
+			}
+						
+			return res;
+			
+		}
+}
+
+
+EmployeeDAO.java
+*****************
+
+package com.dsrc.dao;
+
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.AnnotationConfiguration;
+
+import com.dsrc.bean.Employee;
+
+public class EmployeeDAO
+{
+	public boolean saveEmployee(Employee employee)
+	{		
+		SessionFactory sf=new AnnotationConfiguration().configure().addAnnotatedClass(Employee.class).buildSessionFactory();
+		Session s=sf.openSession();
+		Transaction tx=s.beginTransaction();	
+		
+		s.save(employee);
+		tx.commit();
+		s.close();
+		return true;		
+	}
+}
+...................................................................
+search
+
+BO
+
+public Employee validateEmployeeSearch(Employee d) throws EMPException {
+			// TODO Auto-generated method stub
+			
+			EmployeeDAO ddao=new EmployeeDAO();
+			Employee res=ddao.searchEmployee(d);
+			//System.out.println("jkjh");
+			
+			return res;
+		}
+
+
+servlet:
+
+int empno=Integer.parseInt(request.getParameter("empno"));
+		Employee d=new Employee();
+		
+		
+		d.setEmpNo(empno);
+		
+		
+		Employee b;
+		try {
+			b = new EmployeeBO().validateEmployeeSearch(d);
+		
+	//	System.out.println("kjkljl");
+		if(d.getEmpNo()!=0)
+		{
+			HttpSession sess=request.getSession();
+			RequestDispatcher rd=request.getRequestDispatcher("searchEmployee.jsp");  
+			sess.setAttribute("Employee", b);
+			rd.forward(request, response);
+		//	response.sendRedirect("adminHome.jsp");		
+		}
+		else
+		{
+			RequestDispatcher rd=request.getRequestDispatcher("searchEmployee.jsp");  
+			  request.setAttribute("errorReason", "Invalid EmpNO!");
+			rd.forward(request, response);
+		}}
+		catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		
+		
+		}	
+
+
+
+DAO
+
+public Employee searchEmployee(Employee d) throws EMPException {
+		// TODO Auto-generated method stub
+		Employee pro=new Employee();
+		try{
+			
+		
+	
+			SessionFactory sf=new AnnotationConfiguration().configure().addAnnotatedClass(Employee.class).buildSessionFactory();
+			Session s=sf.openSession();
+			Transaction tc=s.beginTransaction();
+			String hql1 = "FROM Employee P WHERE P.EmpNo=:empno";
+			
+			Query q = s.createQuery(hql1);
+			q.setInteger("empno",d.getEmpNo());
+			
+			List results = q.list();
+			
+			//System.out.println("------------------------------------------------");
+			//System.out.format("%-15s %-15s %-15s %-15s %-15s %-15s %n", "EmpNo ",  "First Name ","Last Name","Email","Mobile","Depat No" );
+			//System.out.println("------------------------------------------------");
+			for(Iterator i=results.iterator();i.hasNext();)
+			{
+				
+			 pro=(Employee) i.next();
+				//System.out.format("%-15s %-15s %-15s %-15s %-15s %-15s %n", pro.getEmpNo(),pro.getFirstName(),pro.getLastName(),pro.getEmail(),pro.getMobile(),pro.getDeptNO());
+			}	
+		}
+		
+		catch(Exception e)
+        {
+        	throw new EMPException(e.getMessage());
+        }
+		
+		return pro;
+	}
+			
+
+
+
+
+
+
+
+
+
+
+JSP
+
+
+<%@page import="com.dsrc.bean.Employee"%>
+
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Insert title here</title>
+</head>
+<body>
+
+<IMG SRC="file:///C:/Users/dsrcuser1/Music/Day28HibernateDay4Question1/WebContent/Logo.png">
+<hr>
+<form action="EmployeeSearch">
+<TABLE>
+<TR><TD>Employee NO</TD><TD><input type="text" name="empno" ></TD></TR><BR><BR>
+    <tr><td><input type="submit" value="Search"  >
+
+</TABLE>
+<%
+if(session.getAttribute("Employee")!=null)
+{
+Employee e=(Employee)session.getAttribute("Employee");
+
+%>
+</form>
+<center>
+<table border="1">
+<tr><td>Empno</td><td><%= e.getEmpNo() %></td></tr>
+<tr><td>Fname</td><td><%= e.getFirstName() %></td></tr>
+<tr><td>Lname</td><td><%= e.getLastName() %></td></tr>
+<tr><td>Email</td><td><%= e.getEmail() %></td></tr>
+<tr><td>Phone</td><td><%= e.getMobile() %></td></tr>
+<tr><td>DeptId</td><td><%= e.getDeptNO() %></td></tr>
+</table>
+</center>
+
+<%
+}
+%>
+<%
+if(request.getAttribute("errorReason")!=null)
+{ 
+%>
+
+<font color="red"><%= request.getAttribute("errorReason") %></font>
+
+<% 
+}
+%>
+</body>
+</html>
+}
+© 2019 GitHub, Inc.
